@@ -6,7 +6,7 @@ Hệ thống điều phối số tập trung thuộc mô hình Thành phố thô
 
 ##  1. Hàm Lượng Nghiên Cứu Hệ Thống (Research-Based Learning - RBL Focus)
 
-Dự án này không chỉ gồm CRUD (quản lý thêm, sửa, xóa) thông thường bằng cách tập trung nghiên cứu sâu vào hai trụ cột công nghệ chính: **Kiến trúc Hệ thống Nâng cao (Hybrid RAG)** và **Tự động hóa Xử lý Dữ liệu Biên (Computer Vision & OCR)**.
+Ngoài các chức năng thông thường dự án còn tập trung nghiên cứu sâu vào hai trụ cột công nghệ chính: **Kiến trúc Hệ thống Nâng cao (Hybrid RAG)** và **Tự động hóa Xử lý Dữ liệu Biên (Computer Vision & OCR)**.
 
 ### A. Kiến trúc Hệ thống & Trí tuệ nhân tạo (Hợp phần Hybrid RAG Engine)
 * **Nội dung nghiên cứu:** Giải quyết bài toán hạn chế hiện tượng "ảo tưởng dữ liệu" (AI hallucination) của các mô hình ngôn ngữ lớn (LLM) và đảm bảo tính an toàn dữ liệu ranh giới trong khối hành chính công.
