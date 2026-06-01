@@ -89,10 +89,45 @@ Yêu cầu chức năng được ánh xạ trực tiếp từ 35 Use Case của 
 * **Vận hành đóng gói:** Đóng gói độc lập toàn bộ các dịch vụ bằng thành phần **Docker Container** (sử dụng tệp cấu hình `docker-compose.yml`).
 
 ## 6. ERD (Database Diagram)
+* **Các bảng chính:
 
+-profiles (người dùng/công chức)
+-feedbacks (phản ánh của dân)
+-feedback_media / video_footages (hình ảnh, video bằng chứng)
+-feedback_assignments, feedback_processing_logs, feedback_evaluations (quy trình xử lý)
+-violation_records (biên bản vi phạm)
+-notifications (thông báo)
+-categories (loại phản ánh)
+-admin_boundaries (ranh giới hành chính)
+-regional_warnings, kpi_reports (cảnh báo/ báo cáo KPI)
+-campaigns, knowledge_base, chatbot_sessions, chatbot_messages (AI/chat/chiến dịch)
+
+
+* **Mối quan hệ quan trọng:
+
+-feedbacks liên kết đến người dân (citizen_id), quận/phường (ward_id), và loại phản ánh (category_id).
+-feedback_media và video_footages liên kết với feedback_id.
+-feedback_assignments, feedback_processing_logs, feedback_evaluations, -violation_records đều liên quan tới feedback_id và đôi khi tới police_id/staff_id.
+-profiles đóng vai trò trung tâm cho tất cả quyền và thông tin người dùng.
+admin_boundaries kết nối với regional_warnings và kpi_reports.
 
 ## 7. Use Case Diagram
+* **Actor:
+-Citizen
+-Super Admin
+-Commune People’s Committee Officer (Ward Staff)
+-Police Staff
+-AI Service
 
+* **Các chức năng chính:
+
+-Citizen: đăng ký tài khoản, gửi phản ánh mới, cập nhật hồ sơ, xem lịch sử, nhận thông báo, đánh giá xử lý.
+
+-Ward Staff / Police Staff: nhận phản ánh, yêu cầu bổ sung thông tin, chuyển hồ sơ, xử lý hiện trường, ghi nhận báo cáo, trả kết quả.
+
+-Super Admin: quản lý tài khoản, quản lý ranh giới hành chính, giám sát KPI, duyệt/chặn, tạo chiến dịch, báo cáo tổng hợp.
+
+-AI Service: phân loại phản ánh tự động, kiểm tra trùng lặp, xử lý ảnh chứng cứ, trả lời chatbot, truy vấn knowledge base.
 
 ## 8. UI Giao diện Hệ thống (Người dùng)
 
