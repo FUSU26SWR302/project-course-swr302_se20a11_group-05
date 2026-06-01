@@ -1,5 +1,5 @@
 TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)
-DỰ ÁN: HỆ THỐNG THÀNH PHỐ LẮNG NGHE (CITIZEN CONNECTION SYSTEM)
+DỰ ÁN: HỆ THỐNG THÀNH PHỐ KẾT NỐI (CITIZEN CONNECTION SYSTEM)
 
 
 THÔNG TIN NHÓM THỰC HIỆN (PROJECT MEMBERS)
@@ -87,3 +87,7 @@ Yêu cầu chức năng được ánh xạ trực tiếp từ 35 Use Case của 
 * **Công nghệ Backend:** Java Spring Boot xây dựng theo mô hình kiến trúc chuẩn MVC (Controller - Service - Repository).
 * **Cơ sở dữ liệu:** Hệ quản trị cơ sở dữ liệu quan hệ MySQL.
 * **Vận hành đóng gói:** Đóng gói độc lập toàn bộ các dịch vụ bằng thành phần **Docker Container** (sử dụng tệp cấu hình `docker-compose.yml`).
+
+## 6. ERD (Database)
+## 7. Usecase Diagram
+## 8. UI
