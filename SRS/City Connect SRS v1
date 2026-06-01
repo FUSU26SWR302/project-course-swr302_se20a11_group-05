@@ -88,6 +88,139 @@ Yêu cầu chức năng được ánh xạ trực tiếp từ 35 Use Case của 
 * **Cơ sở dữ liệu:** Hệ quản trị cơ sở dữ liệu quan hệ MySQL.
 * **Vận hành đóng gói:** Đóng gói độc lập toàn bộ các dịch vụ bằng thành phần **Docker Container** (sử dụng tệp cấu hình `docker-compose.yml`).
 
-## 6. ERD (Database)
-## 7. Usecase Diagram
-## 8. UI
+## 6. ERD (Database Diagram)
+
+Dưới đây là sơ đồ Quan hệ Thực thể (Entity Relationship Diagram - ERD) biểu diễn thiết kế cơ sở dữ liệu quan hệ của hệ thống "City Connect" dựa trên các thực thể nghiệp vụ:
+
+```mermaid
+erDiagram
+    USERS ||--o{ FEEDBACKS : "gửi phản ánh (citizen)"
+    USERS ||--o{ FEEDBACKS : "được phân công xử lý (assignee)"
+    WARDS ||--o{ FEEDBACKS : "quản lý phản ánh theo khu vực"
+    CATEGORIES ||--o{ FEEDBACKS : "phân loại danh mục sự cố"
+    FEEDBACKS ||--o{ CHAT_MESSAGES : "chứa luồng chat realtime"
+    USERS ||--o{ CHAT_MESSAGES : "gửi tin nhắn chat"
+
+    USERS {
+        int id PK "Khóa chính, tự động tăng"
+        string username "Tên đăng nhập (Email/SĐT)"
+        string password "Mật khẩu mã hóa BCrypt"
+        string role "Vai trò: CITIZEN, WARD_STAFF, POLICE, SUPER_ADMIN"
+        boolean active "Trạng thái kích hoạt (default: true)"
+    }
+    WARDS {
+        int id PK "Khóa chính"
+        string name "Tên Phường/Quận (Ví dụ: Phường Hải Châu I)"
+    }
+    CATEGORIES {
+        int id PK "Khóa chính"
+        string name "Tên danh mục (Hạ tầng, An ninh,..."
+        string description "Mô tả chi tiết"
+    }
+    FEEDBACKS {
+        int id PK "Khóa chính"
+        string trackingCode "Mã tra cứu sự cố ngẫu nhiên duy nhất"
+        string title "Tiêu đề phản ánh"
+        string description "Nội dung phản ánh chi tiết"
+        float latitude "Kinh độ GPS"
+        float longitude "Vĩ độ GPS"
+        string addressDetails "Địa chỉ hiện trường chi tiết"
+        string status "Trạng thái: PENDING, ASSIGNED, IN_PROGRESS, WAITING_INFO, RESOLVED, REJECTED"
+        int categoryId FK "Liên kết bảng CATEGORIES"
+        int wardId FK "Liên kết bảng WARDS"
+        int citizenId FK "Liên kết bảng USERS (Người dân gửi)"
+        int assigneeId FK "Liên kết bảng USERS (Cán bộ xử lý)"
+        string ocr_plate_number "Biển số xe trích xuất tự động bằng AI (nếu có)"
+        datetime createdAt "Thời gian tạo"
+        datetime updatedAt "Thời gian cập nhật"
+    }
+    CHAT_MESSAGES {
+        int id PK "Khóa chính"
+        string chatId "Mã phiên chat realtime (WebSockets)"
+        int senderId FK "Người gửi tin (USERS)"
+        string messageText "Nội dung tin nhắn"
+        datetime timestamp "Thời điểm gửi"
+    }
+```
+
+---
+
+## 7. Use Case Diagram
+
+Sơ đồ Use Case thể hiện sự phân quyền và cấu trúc kế thừa Actor trực tiếp (Direct Generalization) của hệ thống:
+
+```mermaid
+graph TD
+    %% Định nghĩa các Actor chính
+    subgraph Actors [Các Nhóm Tác Nhân]
+        Citizen["👤 Người Dân (Citizen)"]
+        WardStaff["🏢 Cán Bộ Phường (Ward Staff)"]
+        Police["👮 Công An (Police)"]
+        Admin["👑 Super Admin (Lãnh đạo TP)"]
+    end
+
+    %% Mối quan hệ kế thừa giữa các Actor
+    WardStaff -. Kế thừa .-> Citizen
+    Police -. Kế thừa .-> Citizen
+    Admin -. Kế thừa .-> WardStaff
+
+    %% Nhóm chức năng của Người Dân
+    subgraph UC_Citizen [Phân hệ Người Dân]
+        UC01[UC01/02: Đăng ký / Đăng nhập OTP]
+        UC04[UC04: Gửi phản ánh hiện trường]
+        UC05[UC05: Định vị tự động qua Google Maps]
+        UC09[UC09: Chat với Trợ lý AI khẩn cấp RAG]
+    end
+
+    %% Nhóm chức năng của Cán Bộ Phường
+    subgraph UC_Ward [Phân hệ UBND Phường]
+        UC17[UC17: Tiếp nhận phản ánh đô thị]
+        UC20[UC20: Chat Realtime hỗ trợ người dân]
+        UC18[UC18: Cập nhật kết quả hiện trường]
+    end
+
+    %% Nhóm chức năng của Công An
+    subgraph UC_Police [Phân hệ Công An]
+        UC23[UC23: Quét ảnh trích xuất OCR biển số xe]
+    end
+
+    %% Nhóm chức năng của Super Admin
+    subgraph UC_Admin [Phân hệ Super Admin]
+        UC31[UC31: Giám sát Dashboard & KPI thời gian thực]
+    end
+
+    %% Ánh xạ Actor vào Use Case
+    Citizen --> UC01
+    Citizen --> UC04
+    Citizen --> UC05
+    Citizen --> UC09
+
+    WardStaff --> UC17
+    WardStaff --> UC20
+    WardStaff --> UC18
+
+    Police --> UC23
+
+    Admin --> UC31
+```
+
+---
+
+## 8. UI Giao diện Hệ thống (Người dùng)
+
+Dưới đây là giao diện thực tế của hệ thống "Thành Phố Kết Nối" được phát triển với tính tiếp cận cao (Accessibility - NFR-01/02) và giao diện trực quan sinh động:
+
+### 8.1 Trang chủ hệ thống & Thanh điều hướng thông minh
+* Banner quảng bá chính quyền điện tử Đà Nẵng.
+* Tích hợp thanh tăng/giảm kích thước chữ **`[A-]`** và **`[A+]`** trên tiêu đề (Header) hỗ trợ người lớn tuổi dễ dàng theo dõi và tương tác.
+
+![Trang chủ hệ thống - Thành Phố Kết Nối](./images/citizen_home.png)
+
+---
+
+### 8.2 Giao diện Thống kê KPI & Danh sách Phản ánh gần đây
+* Biểu đồ KPI thống kê số lượng phản ánh (Tổng số phản ánh, Đã xử lý, Đang chờ duyệt, Thời gian trung bình).
+* Bộ lọc phản ánh theo danh mục (Môi trường, Giao thông, Hạ tầng).
+* Bản đồ trực quan hiển thị vị trí của từng phản ánh hiện trường realtime.
+
+![Giao diện danh sách phản ánh & Thống kê KPI](./images/citizen_feedbacks.png)
