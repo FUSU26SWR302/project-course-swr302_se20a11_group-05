@@ -12,17 +12,22 @@ import { PoliceDashboard } from "@/features/police/PoliceDashboard";
 
 export const Route = createFileRoute("/_auth/police")({
   beforeLoad: ({ context }) => {
-    const { currentUser } = context as { currentUser: { role: string } };
+    const { currentUser } = context as { currentUser?: { role: string } };
+
+    if (!currentUser) return;
 
     // SECURITY check: Ensure that only the POLICE role is allowed to access the dashboard.
     if (currentUser.role !== Role.POLICE) {
-      throw redirect({ to: "/login", search: { error: "forbidden" } });
+      throw redirect({ to: "/authority-login", search: { redirect: undefined, error: "forbidden" } });
     }
   },
   head: () => ({
     meta: [
-      { title: "Cổng Công an & CSGT — Đà Nẵng Kết Nối" },
-      { name: "description", content: "Cổng dành cho lực lượng Công an, CSGT, PCCC — giám sát giao thông và an ninh." },
+      { title: "Cổng Công an — Đà Nẵng Kết Nối" },
+      {
+        name: "description",
+        content: "Cổng dành cho lực lượng Công an — giám sát an ninh trật tự.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

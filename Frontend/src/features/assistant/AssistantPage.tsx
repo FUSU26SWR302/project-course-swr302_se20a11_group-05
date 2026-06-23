@@ -18,9 +18,10 @@ export function AssistantPage() {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "bot",
-      text: locale === "vi"
-        ? "Xin chào! Tôi là Trợ lý AI nội bộ của Đà Nẵng Kết Nối. Tôi có thể hỗ trợ cán bộ giải đáp thắc mắc về thủ tục hành chính, phản ánh đô thị và tình huống khẩn cấp. Bạn cần hỗ trợ gì hôm nay?"
-        : "Hello! I'm Da Nang's internal AI Assistant. I can help staff with civic procedures, urban reports, and emergencies. How can I help you today?",
+      text:
+        locale === "vi"
+          ? "Xin chào! Tôi là Trợ lý AI nội bộ của Đà Nẵng Kết Nối. Tôi có thể hỗ trợ cán bộ giải đáp thắc mắc về thủ tục hành chính, phản ánh đô thị và tình huống khẩn cấp. Bạn cần hỗ trợ gì hôm nay?"
+          : "Hello! I'm Da Nang's internal AI Assistant. I can help staff with civic procedures, urban reports, and emergencies. How can I help you today?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -28,7 +29,8 @@ export function AssistantPage() {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   // Only the initial greeting — show suggested chips
-  const isNewConversation = messages.length === 1 && messages[0].role === "bot" && !messages[0].isLoading;
+  const isNewConversation =
+    messages.length === 1 && messages[0].role === "bot" && !messages[0].isLoading;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,7 +82,12 @@ export function AssistantPage() {
         const filtered = m.filter((msg) => !msg.isLoading);
         return [
           ...filtered,
-          { role: "bot", text: result.answer, provider: result.provider, latency: result.latencyMs },
+          {
+            role: "bot",
+            text: result.answer,
+            provider: result.provider,
+            latency: result.latencyMs,
+          },
         ];
       });
 
@@ -105,9 +112,10 @@ export function AssistantPage() {
           ...m,
           {
             role: "bot",
-            text: locale === "vi"
-              ? `⚠️ Lỗi kết nối tới AI (${err.status}). Vui lòng thử lại sau.`
-              : `⚠️ AI connection error (${err.status}). Please try again later.`,
+            text:
+              locale === "vi"
+                ? `⚠️ Lỗi kết nối tới AI (${err.status}). Vui lòng thử lại sau.`
+                : `⚠️ AI connection error (${err.status}). Please try again later.`,
           },
         ]);
       } else {
@@ -115,9 +123,10 @@ export function AssistantPage() {
           ...m,
           {
             role: "bot",
-            text: locale === "vi"
-              ? "⚠️ Backend chưa kết nối. Đây là chế độ demo.\n\nNếu bạn cần hỗ trợ khẩn cấp, vui lòng gọi đường dây nóng 1022."
-              : "⚠️ Backend is not connected. This is demo mode.\n\nFor emergencies, please call hotline 1022.",
+            text:
+              locale === "vi"
+                ? "⚠️ Backend chưa kết nối. Đây là chế độ demo.\n\nNếu bạn cần hỗ trợ khẩn cấp, vui lòng gọi đường dây nóng 1022."
+                : "⚠️ Backend is not connected. This is demo mode.\n\nFor emergencies, please call hotline 1022.",
             hotlines: [
               { label: locale === "vi" ? "Đường dây nóng 1022" : "Hotline 1022", tel: "1022" },
               { label: locale === "vi" ? "PCCC / Cứu hỏa" : "Fire/Rescue", tel: "114" },
@@ -137,7 +146,9 @@ export function AssistantPage() {
           <Bot size={28} />
         </div>
         <div>
-          <h1 className="font-heading text-3xl md:text-4xl text-gov-blue">{t("assistant.title")}</h1>
+          <h1 className="font-heading text-3xl md:text-4xl text-gov-blue">
+            {t("assistant.title")}
+          </h1>
           <p className="text-ink-soft">{t("assistant.subtitle")}</p>
         </div>
       </div>
@@ -181,7 +192,13 @@ export function AssistantPage() {
       )}
 
       {/* Input */}
-      <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-3">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          send();
+        }}
+        className="flex gap-3"
+      >
         <input
           value={input}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
@@ -190,7 +207,11 @@ export function AssistantPage() {
           className="flex-1 min-h-[52px] px-4 rounded-lg border-2 border-slate-200 text-base focus:border-gov-blue outline-none bg-white disabled:opacity-50"
           aria-label="Message"
         />
-        <button type="submit" disabled={sending || !input.trim()} className="btn-civic btn-civic-primary disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={sending || !input.trim()}
+          className="btn-civic btn-civic-primary disabled:opacity-50"
+        >
           {sending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
           {t("assistant.send")}
         </button>

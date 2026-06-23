@@ -15,12 +15,35 @@
  */
 
 import { createFileRoute, Link, useNavigate, useSearch, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
-import { Role, AUTHORITY_ROLES, ROLE_LABEL, parseBackendRole } from "@/lib/roles";
+import {
+  Role,
+  AUTHORITY_ROLES,
+  ROLE_LABEL,
+  getDashboardPathForRole,
+  parseBackendRole,
+} from "@/lib/roles";
 import { authApi, ApiError, getToken } from "@/lib/api";
-import { LogIn, Shield, Loader2, AlertCircle, ShieldCheck, Eye, EyeOff, Lock, UserCog, ClipboardList, Users } from "lucide-react";
+import { getAdministrativeUnitLabel } from "@/lib/administrativeUnit";
+import {
+  buildLoginLockoutMessage,
+  getLoginLockoutSeconds,
+} from "@/lib/loginLockout";
+import {
+  LogIn,
+  Shield,
+  Loader2,
+  AlertCircle,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  Lock,
+  UserCog,
+  ClipboardList,
+  Users,
+} from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 
 type AuthorityLoginSearch = {
@@ -28,12 +51,14 @@ type AuthorityLoginSearch = {
   error?: string;
 };
 
-/** Default redirects per authority role after login */
-const ROLE_REDIRECT: Partial<Record<Role, string>> = {
-  [Role.WARD_STAFF]: "/ward",
-  [Role.POLICE]: "/police",
-  [Role.SUPER_ADMIN]: "/city-admin",
-};
+const AUTHORITY_REDIRECT_PREFIXES = ["/ward", "/police", "/city-admin", "/assistant"];
+
+function getAuthorityRedirect(role: Role, requested?: string): string {
+  if (requested && AUTHORITY_REDIRECT_PREFIXES.some((path) => requested.startsWith(path))) {
+    return requested;
+  }
+  return getDashboardPathForRole(role);
+}
 
 export const Route = createFileRoute("/authority-login")({
   validateSearch: (s: Record<string, unknown>): AuthorityLoginSearch => ({
@@ -46,12 +71,15 @@ export const Route = createFileRoute("/authority-login")({
 
     if (token && raw) {
       let user: { role: string } | null = null;
-      try { user = JSON.parse(raw); } catch { /* ignore */ }
+      try {
+        user = JSON.parse(raw);
+      } catch {
+        /* ignore */
+      }
       if (user) {
         const role = parseBackendRole(user.role);
         if (AUTHORITY_ROLES.has(role)) {
-          const defaultRedirect = ROLE_REDIRECT[role] ?? "/city-admin";
-          throw redirect({ to: search.redirect || defaultRedirect });
+          throw redirect({ to: getAuthorityRedirect(role, search.redirect) });
         }
       }
     }
@@ -59,7 +87,10 @@ export const Route = createFileRoute("/authority-login")({
   head: () => ({
     meta: [
       { title: "Đăng nhập Cán bộ — Đà Nẵng Kết Nối" },
-      { name: "description", content: "Cổng đăng nhập dành cho cán bộ phường, công an và lãnh đạo thành phố." },
+      {
+        name: "description",
+        content: "Cổng đăng nhập dành cho cán bộ phường, công an và lãnh đạo thành phố.",
+      },
       // SECURITY: Prevent indexing of the staff login page
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -77,12 +108,42 @@ function AuthorityLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lockoutSeconds, setLockoutSeconds] = useState<number | null>(null);
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
+  const authorityPortalError =
+    locale === "vi"
+      ? "Tai khoan nay khong ton tai."
+      : "This account does not exist.";
+
+  useEffect(() => {
+    if (lockoutSeconds === null) return;
+    if (lockoutSeconds <= 0) {
+      setLockoutSeconds(null);
+      setError(null);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setLockoutSeconds((seconds) => (seconds === null ? null : Math.max(0, seconds - 1)));
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [lockoutSeconds]);
+
+  const clearLoginError = () => {
+    setError(null);
+    setLockoutSeconds(null);
+  };
+
+  const visibleError =
+    lockoutSeconds !== null && lockoutSeconds > 0
+      ? buildLoginLockoutMessage(lockoutSeconds)
+      : error;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearLoginError();
     setLoading(true);
 
     try {
@@ -97,71 +158,37 @@ function AuthorityLoginPage() {
       if ("token" in data && data.token) {
         const role = parseBackendRole(data.role);
 
-        // SECURITY: If the backend returns a CITIZEN role for this staff login page,
-        // reject it — citizens must use /login, not this page.
         if (!AUTHORITY_ROLES.has(role)) {
-          setError(
-            locale === "vi"
-              ? "Tài khoản này không có quyền truy cập cổng cán bộ."
-              : "This account does not have authority portal access."
-          );
+          setError(authorityPortalError);
           setLoading(false);
           return;
         }
 
+        console.log("LOGIN SUCCESS! Response data:", data);
         login({
           name: data.username,
           role,
-          org: "", // Will be populated from user profile
+          org: data.org || getAdministrativeUnitLabel(data.wardType, data.wardName),
+          wardName: data.wardName,
+          wardType: data.wardType,
+          wardId: data.wardId,
           token: data.token,
         });
 
-        const defaultRedirect = ROLE_REDIRECT[role] ?? "/city-admin";
-        navigate({ to: redirect || defaultRedirect });
+        navigate({ to: getAuthorityRedirect(role, redirect) as any });
       }
     } catch (err) {
-      // ─── DEMO BYPASS ON ANY ERROR ─────────────────────────────
-      // Nếu là tài khoản demo, cho phép bypass qua bất kỳ lỗi nào (kể cả lỗi 500 từ server)
-      const nameLower = username.toLowerCase();
-      const isDemoUser = 
-        nameLower.includes("ward") || 
-        nameLower.includes("phuong") || 
-        nameLower.includes("police") || 
-        nameLower.includes("ca") || 
-        nameLower.includes("admin") || 
-        nameLower.includes("ioc");
-
-      if (isDemoUser) {
-        let resolvedRole: Role = Role.SUPER_ADMIN; 
-        if (nameLower.includes("ward") || nameLower.includes("phuong")) {
-          resolvedRole = Role.WARD_STAFF;
-        } else if (nameLower.includes("police") || nameLower.includes("ca")) {
-          resolvedRole = Role.POLICE;
-        }
-
-        login({
-          name: username || "StaffDemo",
-          role: resolvedRole,
-          org: resolvedRole === Role.WARD_STAFF 
-            ? "UBND Phường Hải Châu I" 
-            : resolvedRole === Role.POLICE 
-              ? "Công an TP. Đà Nẵng" 
-              : "IOC Đà Nẵng",
-          token: "demo-token", // DUMMY TOKEN FOR BYPASSING ROUTE LAYOUT GUARDS
-        });
-
-        const defaultRedirect = ROLE_REDIRECT[resolvedRole] ?? "/city-admin";
-        navigate({ to: redirect || defaultRedirect });
-        return;
-      }
-
       // Xử lý lỗi thông thường cho tài khoản thật
       if (err instanceof ApiError) {
+        if (err.status === 429) {
+          setLockoutSeconds(getLoginLockoutSeconds(err.message) ?? 60);
+          setError(err.message);
+          return;
+        }
+
         if (err.status === 401) {
           setError(
-            locale === "vi"
-              ? "Sai tài khoản hoặc mật khẩu"
-              : "Invalid username or password"
+            locale === "vi" ? "Sai tài khoản hoặc mật khẩu" : "Invalid username or password",
           );
         } else {
           setError(err.message);
@@ -170,7 +197,7 @@ function AuthorityLoginPage() {
         setError(
           locale === "vi"
             ? "Không thể kết nối tới máy chủ. Vui lòng thử lại."
-            : "Cannot connect to server. Please try again."
+            : "Cannot connect to server. Please try again.",
         );
       }
     } finally {
@@ -180,7 +207,7 @@ function AuthorityLoginPage() {
 
   const handleMfaVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearLoginError();
     setLoading(true);
 
     try {
@@ -188,16 +215,20 @@ function AuthorityLoginPage() {
       const role = parseBackendRole(data.role);
 
       if (!AUTHORITY_ROLES.has(role)) {
-        setError(
-          locale === "vi"
-            ? "Tài khoản này không có quyền truy cập cổng cán bộ."
-            : "This account does not have authority portal access."
-        );
+        setError(authorityPortalError);
         return;
       }
 
-      login({ name: data.username, role, org: "", token: data.token });
-      navigate({ to: redirect || ROLE_REDIRECT[role] || "/city-admin" });
+      login({
+        name: data.username,
+        role,
+        org: data.org || getAdministrativeUnitLabel(data.wardType, data.wardName),
+        wardName: data.wardName,
+        wardType: data.wardType,
+        wardId: data.wardId,
+        token: data.token,
+      });
+      navigate({ to: getAuthorityRedirect(role, redirect) as any });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(locale === "vi" ? "Mã xác thực không đúng" : "Invalid MFA code");
@@ -211,7 +242,6 @@ function AuthorityLoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-
       {/* ══ LEFT — Authority Hero Panel ════════════════════════════ */}
       <div
         className="hidden lg:flex lg:w-[42%] flex-col relative overflow-hidden"
@@ -262,10 +292,16 @@ function AuthorityLoginPage() {
           <div className="mb-6">
             <div
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold mb-6"
-              style={{ background: "rgba(212,175,55,0.15)", color: "#d4af37", border: "1px solid rgba(212,175,55,0.3)" }}
+              style={{
+                background: "rgba(212,175,55,0.15)",
+                color: "#d4af37",
+                border: "1px solid rgba(212,175,55,0.3)",
+              }}
             >
               <ShieldCheck size={14} />
-              {locale === "vi" ? "CỔNG CÁN BỘ — TRUY CẬP BẢO MẬT" : "AUTHORITY PORTAL — SECURE ACCESS"}
+              {locale === "vi"
+                ? "CỔNG CÁN BỘ — TRUY CẬP BẢO MẬT"
+                : "AUTHORITY PORTAL — SECURE ACCESS"}
             </div>
           </div>
 
@@ -274,14 +310,18 @@ function AuthorityLoginPage() {
             <h1 className="font-heading text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
               {locale === "vi" ? (
                 <>
-                  Hệ Thống<br />
-                  <span style={{ color: "#d4af37" }}>Quản Lý</span><br />
+                  Hệ Thống
+                  <br />
+                  <span style={{ color: "#d4af37" }}>Quản Lý</span>
+                  <br />
                   Chính Quyền
                 </>
               ) : (
                 <>
-                  Authority<br />
-                  <span style={{ color: "#d4af37" }}>Management</span><br />
+                  Authority
+                  <br />
+                  <span style={{ color: "#d4af37" }}>Management</span>
+                  <br />
                   System
                 </>
               )}
@@ -296,18 +336,37 @@ function AuthorityLoginPage() {
           {/* Authority role cards */}
           <div className="space-y-2.5 mb-10">
             {[
-              { icon: <Users size={14} />, label: locale === "vi" ? "CÁN BỘ PHƯỜNG" : "WARD STAFF", desc: locale === "vi" ? "Tiếp nhận và xử lý phản ánh" : "Receive and process reports" },
-              { icon: <Shield size={14} />, label: locale === "vi" ? "CÔNG AN / CSGT" : "POLICE / TRAFFIC", desc: locale === "vi" ? "Giám sát an ninh trật tự" : "Monitor public security" },
-              { icon: <ClipboardList size={14} />, label: locale === "vi" ? "LÃNH ĐẠO THÀNH PHỐ" : "CITY LEADERSHIP", desc: locale === "vi" ? "Báo cáo tổng hợp toàn thành" : "City-wide reporting dashboard" },
+              {
+                icon: <Users size={14} />,
+                label: locale === "vi" ? "CÁN BỘ PHƯỜNG" : "WARD STAFF",
+                desc:
+                  locale === "vi" ? "Tiếp nhận và xử lý phản ánh" : "Receive and process reports",
+              },
+              {
+                icon: <Shield size={14} />,
+                label: locale === "vi" ? "CÔNG AN" : "POLICE",
+                desc: locale === "vi" ? "Giám sát an ninh trật tự" : "Monitor public security",
+              },
+              {
+                icon: <ClipboardList size={14} />,
+                label: locale === "vi" ? "LÃNH ĐẠO THÀNH PHỐ" : "CITY LEADERSHIP",
+                desc:
+                  locale === "vi" ? "Báo cáo tổng hợp toàn thành" : "City-wide reporting dashboard",
+              },
             ].map((item) => (
               <div
                 key={item.label}
                 className="flex items-start gap-3 px-4 py-3 rounded-xl"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }}
               >
                 <span className="text-gov-gold mt-0.5 shrink-0">{item.icon}</span>
                 <div>
-                  <p className="text-white/75 text-xs font-bold uppercase tracking-wider">{item.label}</p>
+                  <p className="text-white/75 text-xs font-bold uppercase tracking-wider">
+                    {item.label}
+                  </p>
                   <p className="text-white/40 text-xs mt-0.5">{item.desc}</p>
                 </div>
               </div>
@@ -327,7 +386,6 @@ function AuthorityLoginPage() {
 
       {/* ══ RIGHT — Form Panel ═════════════════════════════════════ */}
       <div className="flex-1 flex flex-col min-h-screen" style={{ background: "#f4f7fa" }}>
-
         {/* Mobile logo */}
         <div className="flex lg:hidden items-center gap-3 px-6 pt-8 pb-4">
           <img src={logoUrl} alt="Đà Nẵng Kết Nối" className="h-10 w-auto object-contain" />
@@ -336,7 +394,6 @@ function AuthorityLoginPage() {
         {/* Form container */}
         <div className="flex-1 flex items-center justify-center px-6 py-8">
           <div className="w-full max-w-sm">
-
             {/* Header */}
             {!mfaRequired && (
               <div className="mb-8">
@@ -371,10 +428,10 @@ function AuthorityLoginPage() {
             )}
 
             {/* Error */}
-            {error && (
+            {visibleError && (
               <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-3 text-red-700">
                 <AlertCircle size={16} className="shrink-0" />
-                <span className="text-sm">{error}</span>
+                <span className="text-sm">{visibleError}</span>
               </div>
             )}
 
@@ -421,17 +478,19 @@ function AuthorityLoginPage() {
 
                 <button
                   type="button"
-                  onClick={() => { setMfaRequired(false); setMfaCode(""); }}
+                  onClick={() => {
+                    setMfaRequired(false);
+                    setMfaCode("");
+                    clearLoginError();
+                  }}
                   className="btn-civic btn-civic-ghost w-full rounded-xl"
                 >
                   {locale === "vi" ? "Quay lại" : "Back"}
                 </button>
               </form>
-
             ) : (
               /* ── Login Form ── */
               <form className="space-y-4" onSubmit={handleLogin}>
-
                 {/* Username with icon */}
                 <div className="relative">
                   <UserCog
@@ -442,7 +501,10 @@ function AuthorityLoginPage() {
                     id="authority-username"
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      clearLoginError();
+                    }}
                     className="w-full min-h-[52px] pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white text-base focus:border-gov-blue outline-none transition-colors placeholder:text-slate-400"
                     placeholder={locale === "vi" ? "Tên đăng nhập cán bộ" : "Staff username"}
                     autoComplete="username"
@@ -507,7 +569,10 @@ function AuthorityLoginPage() {
 
                 {/* Back to citizen portal */}
                 <div className="text-center">
-                  <Link to="/login" className="text-sm text-ink-soft hover:text-gov-blue transition-colors">
+                  <Link
+                    to="/login"
+                    className="text-sm text-ink-soft hover:text-gov-blue transition-colors"
+                  >
                     ← {locale === "vi" ? "Cổng người dân" : "Citizen Portal"}
                   </Link>
                 </div>
@@ -519,7 +584,12 @@ function AuthorityLoginPage() {
         {/* Footer */}
         <footer className="px-6 pb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src={logoUrl} alt="" className="h-6 w-auto object-contain opacity-40" aria-hidden="true" />
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-6 w-auto object-contain opacity-40"
+              aria-hidden="true"
+            />
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
             © {new Date().getFullYear()}{" "}

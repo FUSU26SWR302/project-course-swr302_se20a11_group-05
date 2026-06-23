@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ShieldAlert, LogIn, Lock } from "lucide-react";
+import { Lock, ShieldAlert, LogIn, LockKeyhole } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ROLE_LABEL, type Role } from "@/lib/roles";
 import { useI18n } from "@/lib/i18n";
@@ -47,8 +47,12 @@ export function RoleGuard({ roles, children }: Props) {
             </span>
           </div>
         ) : null}
-        <Link to={"/login" as any} className="btn-civic btn-civic-primary w-full">
-          <Lock size={18} />
+        <Link
+          to={"/login" as any}
+          search={{} as any}
+          className="btn-civic btn-civic-primary w-full"
+        >
+          <LockKeyhole size={18} />
           {locale === "vi" ? "Chuyển đến trang Đăng nhập" : "Go to Login"}
         </Link>
         <Link to="/" className="block mt-3 text-sm text-gov-blue font-semibold hover:underline">

@@ -15,6 +15,8 @@ export interface TokenResponse {
   tokenType: string;
   username: string;
   role: BackendRole;
+  wardName?: string | null;
+  wardType?: string | null;
 }
 
 export interface MfaRequiredResponse {
@@ -49,8 +51,16 @@ export interface PageResponse<T> {
 // ─── Feedback Types ───────────────────────────────────────────
 
 export type FeedbackStatus =
-  | "PENDING" | "ASSIGNED" | "IN_PROGRESS"
-  | "WAITING_INFO" | "RESOLVED" | "REJECTED" | "PRE_EMPTIVE";
+  | "SUBMITTED"
+  | "PENDING_RECEIVE"
+  | "PENDING"
+  | "NEED_LOCATION_REVIEW"
+  | "ASSIGNED"
+  | "IN_PROGRESS"
+  | "WAITING_INFO"
+  | "RESOLVED"
+  | "REJECTED"
+  | "PRE_EMPTIVE";
 
 export interface FeedbackResponse {
   id: number;
@@ -61,7 +71,18 @@ export interface FeedbackResponse {
   longitude: number | null;
   addressDetails: string | null;
   status: FeedbackStatus;
+  categoryCode?: string | null;
   categoryName: string | null;
+  category?: string | null;
+  managedByRole?: BackendRole | null;
+  wardId?: number | null;
+  wardName?: string | null;
+  districtName?: string | null;
+  cityName?: string | null;
+  assignedUnitId?: number | null;
+  assignedUnitName?: string | null;
+  assignedToRole?: BackendRole | null;
+  assignedStaffId?: number | null;
   citizenName: string | null;
   assigneeName: string | null;
   createdAt: string;
@@ -71,19 +92,27 @@ export interface FeedbackResponse {
 export interface FeedbackRequest {
   title: string;
   description: string;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
   addressDetails?: string;
-  categoryId: number;
-  wardId: number;
+  categoryId?: number;
+  categoryCode: string;
+  wardId?: number;
 }
 
 // ─── Category Types ───────────────────────────────────────────
 
 export interface CategoryResponse {
   id: number;
+  code: string;
   name: string;
   description: string;
+  nameVi?: string;
+  nameEn?: string;
+  descriptionVi?: string;
+  descriptionEn?: string;
+  managedByRole?: BackendRole;
+  active?: boolean;
 }
 
 // ─── RAG / Chatbot Types ──────────────────────────────────────
@@ -116,53 +145,14 @@ export interface ChatbotResponse {
   chatId: string;
 }
 
-// ─── Weather / Predictive Incident Types ──────────────────────
-
-export interface CurrentWeather {
-  temperature: number;
-  precipitation: number;
-  windspeed: number;
-  relativeHumidity: number;
-  weatherDescription: string;
-}
-
-export interface HourlyForecast {
-  time: string;
-  temperature: number;
-  precipitation: number;
-  windspeed: number;
-}
-
-export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-export type AlertLevel = "NORMAL" | "WATCH" | "WARNING" | "DANGER";
-export type IncidentType = "FLOOD" | "FALLEN_TREE" | "ROAD_DAMAGE" | "POWER_OUTAGE";
-
-export interface PredictedHotspot {
-  wardName: string;
-  latitude: number;
-  longitude: number;
-  incidentType: IncidentType;
-  incidentLabel: string;
-  riskLevel: RiskLevel;
-  riskScore: number;
-  reason: string;
-}
-
-export interface WeatherForecastResponse {
-  current: CurrentWeather;
-  next24Hours: HourlyForecast[];
-  predictedHotspots: PredictedHotspot[] | null;
-  alertLevel: AlertLevel;
-  alertMessage: string;
-}
-
 // ─── Analytics Types ─────────────────────────────────────────
 
 export interface KpiData {
   total: number;
   resolved: number;
+  unresolved: number;
+  inProgress: number;
   pending: number;
-  satisfactionRate: string;
 }
 
 export interface WardPerformance {

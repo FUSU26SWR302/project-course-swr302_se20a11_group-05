@@ -3,7 +3,20 @@ import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { ApiError } from "@/lib/api";
 import { useRegisterMutation } from "@/lib/hooks";
-import { UserPlus, Loader2, AtSign, Lock, Mail, Phone, Zap, MessageSquare, Eye, EyeOff, Shield } from "lucide-react";
+import {
+  UserPlus,
+  Loader2,
+  AtSign,
+  Lock,
+  Mail,
+  Phone,
+  Zap,
+  MessageSquare,
+  Eye,
+  EyeOff,
+  Shield,
+  User,
+} from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,12 +37,18 @@ export const Route = createFileRoute("/register")({
 
 const registerSchema = z.object({
   username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
-  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
-  email: z.union([z.string().email("Email không hợp lệ"), z.literal("")]),
-  phone: z.union([
-    z.string().regex(/^0\d{9}$/, "Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)"),
-    z.literal(""),
-  ]),
+  fullName: z.string().min(1, "Họ và tên là bắt buộc"),
+  password: z
+    .string()
+    .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+    .regex(/[a-z]/, "Mật khẩu phải có ít nhất 1 chữ thường")
+    .regex(/[A-Z]/, "Mật khẩu phải có ít nhất 1 chữ hoa")
+    .regex(/\d/, "Mật khẩu phải có ít nhất 1 chữ số"),
+  email: z.string().min(1, "Email là bắt buộc").email("Email không hợp lệ"),
+  phone: z
+    .string()
+    .min(1, "Số điện thoại là bắt buộc")
+    .regex(/^(\+84|0)[3-9]\d{8}$/, "Số điện thoại không hợp lệ (VD: 0901234567 hoặc +84901234567)"),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -38,40 +57,48 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
   const { locale } = useI18n();
 
   const checks = [
-    { label: "Độ dài", passed: password.length >= 6 },
-    { label: "Số", passed: /\d/.test(password) },
-    { label: "Ký tự đặc biệt", passed: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+    { label: "≥8 ký tự", passed: password.length >= 8 },
+    { label: "Chữ hoa", passed: /[A-Z]/.test(password) },
+    { label: "Chữ thường", passed: /[a-z]/.test(password) },
+    { label: "Chữ số", passed: /\d/.test(password) },
   ];
 
   const passedCount = checks.filter((c) => c.passed).length;
+  const activeSegmentClass =
+    passedCount <= 1 ? "bg-red-300" : passedCount === 2 ? "bg-amber-400" : "bg-green-500";
 
   const strengthLabel =
     password.length === 0
       ? ""
       : passedCount <= 1
-        ? locale === "vi" ? "Yếu" : "Weak"
+        ? locale === "vi"
+          ? "Yếu"
+          : "Weak"
         : passedCount === 2
-          ? locale === "vi" ? "Trung bình" : "Medium"
-          : locale === "vi" ? "Mạnh" : "Strong";
+          ? locale === "vi"
+            ? "Trung bình"
+            : "Medium"
+          : locale === "vi"
+            ? "Mạnh"
+            : "Strong";
 
   return (
     <div className="space-y-1.5 mt-2">
       <div className="flex gap-1.5">
-        {checks.map((check, i) => (
+        {checks.map((_, i) => (
           <div
             key={i}
-            className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ${password.length === 0
+            className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ${
+              password.length === 0
                 ? "bg-gray-200"
-                : check.passed
-                  ? "bg-green-500"
-                  : "bg-red-300"
-              }`}
+                : i < passedCount
+                  ? activeSegmentClass
+                  : "bg-gray-200"
+            }`}
           />
         ))}
       </div>
-      {password.length > 0 && (
-        <p className="text-xs text-muted-foreground">{strengthLabel}</p>
-      )}
+      {password.length > 0 && <p className="text-xs text-muted-foreground">{strengthLabel}</p>}
     </div>
   );
 }
@@ -87,6 +114,7 @@ function RegisterPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      fullName: "",
       password: "",
       email: "",
       phone: "",
@@ -100,21 +128,18 @@ function RegisterPage() {
       await registerMutation.mutateAsync({
         username: values.username,
         password: values.password,
-        fullName: values.username,
-        email: values.email || "",
-        phoneNumber: values.phone || "",
+        fullName: values.fullName,
+        email: values.email,
+        phoneNumber: values.phone,
       });
-      toast.success(
-        locale === "vi" ? "Đăng ký thành công!" : "Registration successful!",
-        {
-          description:
-            locale === "vi"
-              ? "Đang chuyển hướng đến trang đăng nhập..."
-              : "Redirecting to login...",
-        },
-      );
+      toast.success(locale === "vi" ? "Đăng ký thành công!" : "Registration successful!", {
+        description:
+          locale === "vi"
+            ? "Đang chuyển hướng đến trang xác thực OTP..."
+            : "Redirecting to OTP verification...",
+      });
       setTimeout(() => {
-        navigate({ to: "/login" as any });
+        navigate({ to: "/verify-otp", search: { phone: values.phone } });
       }, 1500);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -131,7 +156,6 @@ function RegisterPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row animate-fade-in">
-
       {/* ══ LEFT — Hero Panel ══════════════════════════════════════ */}
       <div
         className="hidden lg:flex lg:w-[42%] flex-col relative overflow-hidden"
@@ -183,12 +207,14 @@ function RegisterPage() {
             <h1 className="font-heading text-5xl xl:text-6xl font-bold text-white leading-tight mb-4">
               {locale === "vi" ? (
                 <>
-                  Thành Phố<br />
+                  Thành Phố
+                  <br />
                   <span style={{ color: "#d4af37" }}>Kết Nối</span>
                 </>
               ) : (
                 <>
-                  A City That<br />
+                  A City That
+                  <br />
                   <span style={{ color: "#d4af37" }}>Connect</span>
                 </>
               )}
@@ -202,25 +228,35 @@ function RegisterPage() {
 
           {/* Feature list */}
           <div className="space-y-3 mb-10">
-            <div className="flex items-start gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(255,255,255,0.07)" }}>
+            <div
+              className="flex items-start gap-3 px-4 py-3 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.07)" }}
+            >
               <Zap size={16} className="text-gov-gold mt-0.5 shrink-0" />
               <div>
                 <p className="text-white/80 text-xs font-bold uppercase tracking-wider">
                   {locale === "vi" ? "Tiện ích thông minh" : "Smart Services"}
                 </p>
                 <p className="text-white/50 text-xs mt-0.5">
-                  {locale === "vi" ? "Tra cứu dịch vụ công 24/7 tức thì" : "Access public services 24/7 instantly"}
+                  {locale === "vi"
+                    ? "Tra cứu dịch vụ công 24/7 tức thì"
+                    : "Access public services 24/7 instantly"}
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-3 px-4 py-3 rounded-xl" style={{ background: "rgba(255,255,255,0.07)" }}>
+            <div
+              className="flex items-start gap-3 px-4 py-3 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.07)" }}
+            >
               <MessageSquare size={16} className="text-gov-gold mt-0.5 shrink-0" />
               <div>
                 <p className="text-white/80 text-xs font-bold uppercase tracking-wider">
                   {locale === "vi" ? "Tương tác trực tiếp" : "Direct Interaction"}
                 </p>
                 <p className="text-white/50 text-xs mt-0.5">
-                  {locale === "vi" ? "Gửi phản ánh, nhận phản hồi minh bạch" : "Submit reports, get transparent feedback"}
+                  {locale === "vi"
+                    ? "Gửi phản ánh, nhận phản hồi minh bạch"
+                    : "Submit reports, get transparent feedback"}
                 </p>
               </div>
             </div>
@@ -239,7 +275,6 @@ function RegisterPage() {
 
       {/* ══ RIGHT — Form Panel ═════════════════════════════════════ */}
       <div className="flex-1 flex flex-col min-h-screen" style={{ background: "#f4f7fa" }}>
-
         {/* Mobile logo (shown only on small screens) */}
         <div className="flex lg:hidden items-center gap-3 px-6 pt-8 pb-4">
           <img src={logoUrl} alt="Đà Nẵng Kết Nối" className="h-10 w-auto object-contain" />
@@ -248,7 +283,6 @@ function RegisterPage() {
         {/* Form container */}
         <div className="flex-1 flex items-center justify-center px-6 py-8">
           <div className="w-full max-w-sm">
-
             {/* Tabs: Đăng nhập / Đăng ký */}
             <div className="flex gap-6 mb-8 border-b border-slate-200">
               <Link
@@ -268,7 +302,6 @@ function RegisterPage() {
             {/* Form */}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleRegister)} className="space-y-4">
-
                 {/* Username field */}
                 <FormField
                   control={form.control}
@@ -291,6 +324,28 @@ function RegisterPage() {
                   )}
                 />
 
+                {/* Full Name field */}
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1">
+                      <div className="relative">
+                        <User
+                          size={16}
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                        />
+                        <Input
+                          placeholder={locale === "vi" ? "Họ và tên" : "Full name"}
+                          className="w-full min-h-[52px] pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white text-base focus:border-gov-blue focus-visible:ring-0 outline-none transition-colors placeholder:text-slate-400"
+                          {...field}
+                        />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* Email field */}
                 <FormField
                   control={form.control}
@@ -304,7 +359,7 @@ function RegisterPage() {
                         />
                         <Input
                           type="email"
-                          placeholder={locale === "vi" ? "Email (không bắt buộc)" : "Email (optional)"}
+                          placeholder={locale === "vi" ? "Email" : "Email"}
                           className="w-full min-h-[52px] pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white text-base focus:border-gov-blue focus-visible:ring-0 outline-none transition-colors placeholder:text-slate-400"
                           {...field}
                         />
@@ -327,7 +382,7 @@ function RegisterPage() {
                         />
                         <Input
                           type="tel"
-                          placeholder={locale === "vi" ? "Số điện thoại (không bắt buộc)" : "Phone number (optional)"}
+                          placeholder={locale === "vi" ? "Số điện thoại" : "Phone number"}
                           className="w-full min-h-[52px] pl-10 pr-4 rounded-xl border-2 border-slate-200 bg-white text-base focus:border-gov-blue focus-visible:ring-0 outline-none transition-colors placeholder:text-slate-400"
                           {...field}
                         />
@@ -380,17 +435,20 @@ function RegisterPage() {
                   {registerMutation.isPending && <Loader2 size={18} className="animate-spin" />}
                   {locale === "vi" ? "Đăng ký ngay →" : "Register Now →"}
                 </button>
-
               </form>
             </Form>
-
           </div>
         </div>
 
         {/* Footer */}
         <footer className="px-6 pb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <img src={logoUrl} alt="" className="h-6 w-auto object-contain opacity-50" aria-hidden="true" />
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-6 w-auto object-contain opacity-50"
+              aria-hidden="true"
+            />
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
             © {new Date().getFullYear()}{" "}
@@ -413,7 +471,6 @@ function RegisterPage() {
               : "Da Nang Connects — Citizen-Staff Connection · SWP391 SE20A11"}
           </p>
         </footer>
-
       </div>
     </div>
   );

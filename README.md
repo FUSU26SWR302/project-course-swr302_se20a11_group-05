@@ -1,4 +1,4 @@
-Thành Phố Lắng Nghe (Listening City) - Nền Tảng Phản Ánh Đô Thị Thông Minh
+Thành Phố Kết Nối (Citizen Connection System) - Nền Tảng Phản Ánh Đô Thị Thông Minh
 
 Hệ thống điều phối số tập trung thuộc mô hình Thành phố thông minh (Smart City), đóng vai trò cầu nối trực tiếp giữa người dân và chính quyền thành phố Đà Nẵng (UBND Phường, Cơ quan Công an) nhằm tiếp nhận phản ánh sự cố đô thị theo thời gian thực và tự động điều phối xử lý. Giúp quá trình chuyển đổi số của thành phố Đà Nẵng rỗng rãi hơn trong tương lai.
 

@@ -23,18 +23,33 @@ export function ChatMessage({ msg, locale }: ChatMessageProps) {
         msg.role === "bot" ? "animate-fade-in-up" : "animate-slide-in-right"
       }`}
     >
-      <div className={`w-10 h-10 rounded-full grid place-items-center shrink-0 ${msg.role === "user" ? "bg-gov-gold text-gov-blue-deep" : "bg-gov-blue text-white"}`}>
+      <div
+        className={`w-10 h-10 rounded-full grid place-items-center shrink-0 ${msg.role === "user" ? "bg-gov-gold text-gov-blue-deep" : "bg-gov-blue text-white"}`}
+      >
         {msg.role === "user" ? <User size={20} /> : <Bot size={20} />}
       </div>
-      <div className={`max-w-[80%] p-4 rounded-2xl text-base leading-relaxed ${msg.role === "user" ? "bg-gov-blue text-white rounded-tr-sm" : "bg-slate-100 text-ink rounded-tl-sm"}`}>
+      <div
+        className={`max-w-[80%] p-4 rounded-2xl text-base leading-relaxed ${msg.role === "user" ? "bg-gov-blue text-white rounded-tr-sm" : "bg-slate-100 text-ink rounded-tl-sm"}`}
+      >
         {msg.isLoading ? (
           <div className="flex items-center gap-1.5 text-ink-soft">
             <div className="flex gap-1">
-              <span className="w-2 h-2 rounded-full bg-gov-blue/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 rounded-full bg-gov-blue/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 rounded-full bg-gov-blue/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+              <span
+                className="w-2 h-2 rounded-full bg-gov-blue/40 animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              />
+              <span
+                className="w-2 h-2 rounded-full bg-gov-blue/40 animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              />
+              <span
+                className="w-2 h-2 rounded-full bg-gov-blue/40 animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              />
             </div>
-            <span className="text-sm">{locale === "vi" ? "AI đang xử lý..." : "AI is thinking..."}</span>
+            <span className="text-sm">
+              {locale === "vi" ? "AI đang xử lý..." : "AI is thinking..."}
+            </span>
           </div>
         ) : (
           <>
@@ -44,9 +59,7 @@ export function ChatMessage({ msg, locale }: ChatMessageProps) {
                 <span className="bg-gov-blue/10 text-gov-blue-dark px-2 py-0.5 rounded font-medium dark:bg-gov-blue/20 dark:text-blue-300">
                   {msg.provider}
                 </span>
-                {msg.latency && (
-                  <span className="text-ink-soft/60">{msg.latency}ms</span>
-                )}
+                {msg.latency && <span className="text-ink-soft/60">{msg.latency}ms</span>}
               </div>
             )}
             {/* Citations */}
@@ -59,7 +72,10 @@ export function ChatMessage({ msg, locale }: ChatMessageProps) {
                   </summary>
                   <ul className="mt-2 space-y-1.5">
                     {msg.citations.map((c, ci) => (
-                      <li key={ci} className="text-xs text-ink-soft bg-white/50 rounded p-2 border border-slate-100">
+                      <li
+                        key={ci}
+                        className="text-xs text-ink-soft bg-white/50 rounded p-2 border border-slate-100"
+                      >
                         <span className="font-medium text-gov-blue">{c.source}</span>
                         <p className="mt-0.5 line-clamp-2">{c.content}</p>
                       </li>

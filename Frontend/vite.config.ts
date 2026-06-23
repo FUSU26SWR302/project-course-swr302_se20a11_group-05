@@ -16,16 +16,23 @@ export default defineConfig({
     server: {
       port: 5173,
       strictPort: false,
-      // Proxy /api/* requests tới Backend Spring Boot
-      // → Cho phép FE và BE chạy qua 1 URL duy nhất
       proxy: {
         "/api": {
           target: "http://localhost:8081",
           changeOrigin: true,
           secure: false,
         },
+        "/ws-native": {
+          target: "http://localhost:8081",
+          ws: true,
+          changeOrigin: true,
+        },
+        "/ws": {
+          target: "http://localhost:8081",
+          ws: true,
+          changeOrigin: true,
+        },
       },
     },
   },
 });
-

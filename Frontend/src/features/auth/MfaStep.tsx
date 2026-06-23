@@ -9,14 +9,7 @@ interface MfaStepProps {
   locale: "vi" | "en";
 }
 
-export function MfaStep({
-  loading,
-  mfaCode,
-  onChange,
-  onSubmit,
-  onCancel,
-  locale,
-}: MfaStepProps) {
+export function MfaStep({ loading, mfaCode, onChange, onSubmit, onCancel, locale }: MfaStepProps) {
   return (
     <form className="space-y-5" onSubmit={onSubmit}>
       <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">

@@ -15,7 +15,10 @@ const dots: Record<ReportStatus, string> = {
   urgent: "bg-red-500",
 };
 
-const labels: Record<ReportStatus, "status.pending" | "status.inProgress" | "status.resolved" | "status.urgent"> = {
+const labels: Record<
+  ReportStatus,
+  "status.pending" | "status.inProgress" | "status.resolved" | "status.urgent"
+> = {
   pending: "status.pending",
   inProgress: "status.inProgress",
   resolved: "status.resolved",
@@ -25,7 +28,9 @@ const labels: Record<ReportStatus, "status.pending" | "status.inProgress" | "sta
 export function StatusBadge({ status }: { status: ReportStatus }) {
   const { t } = useI18n();
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full tracking-wide ${styles[status]}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full tracking-wide ${styles[status]}`}
+    >
       <span className={`w-1.5 h-1.5 rounded-full ${dots[status]}`} />
       {t(labels[status])}
     </span>

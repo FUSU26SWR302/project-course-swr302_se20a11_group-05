@@ -66,10 +66,11 @@ export function assertAuth(
   // ── 1. Not authenticated at all ──────────────────────────────
   if (!isAuthenticated || !user) {
     throw redirect({
-      to: opts.loginUrl,
+      to: opts.loginUrl as any,
       search: {
         redirect: typeof window !== "undefined" ? window.location.pathname : undefined,
-      },
+        error: undefined,
+      } as any,
     });
   }
 
@@ -81,13 +82,16 @@ export function assertAuth(
   if (opts.portal === "authority" && CITIZEN_ROLES.has(user.role)) {
     // Citizen trying to access authority portal — purge session & redirect
     auth.logout();
-    throw redirect({ to: opts.loginUrl });
+    throw redirect({
+      to: opts.loginUrl as any,
+      search: { redirect: undefined, error: "forbidden" } as any,
+    });
   }
 
   // Authority staff hitting a citizen-only route is not a threat —
   // they probably clicked a public link. Just redirect to their portal.
   if (opts.portal === "citizen" && AUTHORITY_ROLES.has(user.role)) {
-    throw redirect({ to: "/login" });
+    throw redirect({ to: "/login", search: { redirect: undefined, error: undefined } });
   }
 
   // ── 3. Route-level role check ────────────────────────────────
@@ -96,7 +100,10 @@ export function assertAuth(
   // the specific role required by this route (e.g. POLICE trying /ward).
   if (!opts.allowedRoles.includes(user.role)) {
     // Redirect to generic dashboard — don't expose that route exists
-    throw redirect({ to: "/login", search: { error: "forbidden" } });
+    throw redirect({
+      to: opts.loginUrl as any,
+      search: { redirect: undefined, error: "forbidden" } as any,
+    });
   }
 
   // ── 4. All checks passed — return user for route context ─────
@@ -109,7 +116,7 @@ export function assertAuth(
 export function authorityGuard(allowedRoles: RoleType[]) {
   return {
     allowedRoles,
-    loginUrl: "/login" as const,
+    loginUrl: "/authority-login" as const,
     portal: "authority" as const,
   };
 }

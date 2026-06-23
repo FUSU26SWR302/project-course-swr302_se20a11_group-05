@@ -12,18 +12,24 @@ import { AssistantPage } from "@/features/assistant/AssistantPage";
 
 export const Route = createFileRoute("/_auth/assistant")({
   beforeLoad: ({ context }) => {
-    const { currentUser } = context as { currentUser: { role: string } };
+    const { currentUser } = context as { currentUser?: { role: string } };
+
+    if (!currentUser) return;
+
     const role = parseBackendRole(currentUser.role);
 
     // Defense-in-depth authorization check: Ensure the user belongs to AUTHORITY_ROLES
     if (!AUTHORITY_ROLES.has(role)) {
-      throw redirect({ to: "/login", search: { error: "forbidden" } });
+      throw redirect({ to: "/authority-login", search: { redirect: undefined, error: "forbidden" } });
     }
   },
   head: () => ({
     meta: [
       { title: "Trợ lý AI Nội bộ — Đà Nẵng Kết Nối" },
-      { name: "description", content: "Hỏi đáp nội bộ cho cán bộ về quy trình hành chính và tình huống khẩn cấp." },
+      {
+        name: "description",
+        content: "Hỏi đáp nội bộ cho cán bộ về quy trình hành chính và tình huống khẩn cấp.",
+      },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
