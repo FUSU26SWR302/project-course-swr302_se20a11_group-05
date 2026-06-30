@@ -1,0 +1,149 @@
+TÀI LIỆU ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)
+DỰ ÁN: HỆ THỐNG THÀNH PHỐ KẾT NỐI (CITIZEN CONNECTION SYSTEM)
+
+
+THÔNG TIN NHÓM THỰC HIỆN (PROJECT MEMBERS)
+
+Trường (University): Đại học FPT Đà Nẵng
+Môn: SWR302
+Nhóm: 5
+
+
+
+## 1. INTRODUCTION (GIỚI THIỆU TỔNG QUAN)
+
+### 1.1 Purpose (Mục đích)
+Tài liệu này xác định các yêu cầu chức năng (Functional) và phi chức năng (Non-functional) cho nền tảng "Thành Phố Lắng Nghe" tại địa bàn thành phố Đà Nẵng. Tài liệu phục vụ làm căn cứ phát triển hệ thống cho lập trình viên (Dev), kiểm thử viên (Tester) và làm báo cáo nghiệm thu đồ án.
+
+### 1.2 Scope (Phạm vi dự án)
+Hệ thống là một trung tâm điều phối số quản lý đô thị tập trung, bao gồm:
+* **Phía Người dân:** Gửi phản ánh hiện trường kèm tọa độ GPS, hình ảnh, video chất lượng cao (>10 giây).
+* **Phía Cơ quan chức năng (UBND Phường, Công an):** Tiếp nhận, phân quyền, xử lý hiện trường, trao đổi realtime và báo cáo kết quả cho công dân.
+* **Hợp phần AI chạy ngầm:** Chatbot khẩn cấp (Hybrid RAG) và Hệ thống bóc tách dữ liệu ảnh (OCR nhận diện biển số).
+
+### 1.3 Definitions, Acronyms, and Abbreviations (Thuật ngữ)
+* **SRS:** Software Requirement Specification (Đặc tả yêu cầu phần mềm).
+* **RAG:** Retrieval-Augmented Generation (Kiến trúc AI truy xuất dữ liệu từ kho tri thức).
+* **OCR:** Optical Character Recognition (Nhận dạng ký tự quang học từ ảnh/video).
+* **RBAC:** Role-based Access Control (Hệ thống phân quyền dựa trên vai trò).
+
+
+## 2. OVERALL DESCRIPTION (MÔ TẢ BÀI TOÁN TỔNG THỂ)
+
+### 2.1 Product Perspective (Bối cảnh sản phẩm)
+Hệ thống vận hành độc lập trên môi trường Web/Mobile, có kết nối trực tiếp với các dịch vụ nền tảng bên thứ ba là Google Maps API (định vị/bản đồ) và Gemini API (xử lý logic AI).
+
+### 2.2 User Classes and Characteristics (Cấu trúc Kế thừa Actor)
+Hệ thống áp dụng quan hệ kế thừa trực tiếp (Direct Generalization) giữa các Actor chính:
+1.  **Người Dân (Citizen):** Người kích hoạt đầu vào. Giao diện được tối giản (UX lớn, nút bấm to) tối ưu riêng cho người lớn tuổi (40-70 tuổi) dễ tiếp cận.
+2.  **Cán bộ UBND Phường (Ward Staff):** Kế thừa từ Citizen. Tiếp nhận và xử lý sự cố hạ tầng đô thị, dân sinh.
+3.  **Công an (CSGT,PCCC) (Police Staff):** Kế thừa từ Citizen. Tiếp nhận và xử lý sự cố an ninh trật tự, tai nạn.
+4.  **Admin / Lãnh đạo TP (Super Admin):** Kế thừa từ Ward Staff. Có quyền tối cao điều phối, quản trị danh mục, giám sát hiệu suất KPI của các đơn vị.
+
+---
+
+## 3. FUNCTIONAL REQUIREMENTS (YÊU CẦU CHỨC NĂNG)
+
+Yêu cầu chức năng được ánh xạ trực tiếp từ 35 Use Case của hệ thống:
+
+### 3.1 Module 1: Quản trị & Xác thực (Authentication)
+* **FR-01 (UC00):** Hệ thống phải kiểm soát truy cập bằng token bảo mật Spring Security JWT. Do có quan hệ kế thừa, khi cấu hình quyền cho `Citizen`, các Actor cấp cao hơn mặc định phải truy cập được.
+* **FR-02 (UC01 - UC02):** Cho phép người dân đăng ký tài khoản qua số điện thoại (Xác thực OTP) hoặc Email.
+
+### 3.2 Module 2: Tiếp nhận Phản ánh Hiện trường (Reporting Pipeline)
+* **FR-03 (UC04):** Luồng gửi phản ánh của người dân bắt buộc phải thiết kế theo dạng tuyến tính đơn giản (Quy trình 3 bước: Bằng chứng -> Vị trí -> Mô tả).
+* **FR-04 (UC06 - Điều kiện Media):** Hệ thống backend Spring Boot phải từ chối các tệp tin video có độ dài dưới **10 giây** nhằm loại bỏ tin rác, đảm bảo tính xác thực của hiện trường.
+* **FR-05 (UC05 - Định vị thông minh):** Hệ thống tự động bắt tọa độ vĩ độ (Latitude) và kinh độ (Longitude) của người dân thông qua Google Maps API để gán mã `ward_id` quản lý tự động.
+
+### 3.3 Module 3: Tự động hóa bằng Trí tuệ nhân tạo (AI Automation)
+* **FR-06 (UC23 - OCR Engine):** Khi Công an tiếp nhận phản ánh vi phạm, hệ thống phải tự động quét hình ảnh/video bằng chứng để trích xuất chuỗi ký tự và lưu vào trường dữ liệu `ocr_plate_number` (Biển số xe).
+* **FR-07 (UC09 - Hybrid RAG Chatbot):** Trợ lý AI khẩn cấp phải sử dụng công nghệ RAG để truy vấn kho dữ liệu văn bản pháp lý, danh bạ khẩn cấp của Đà Nẵng để trả lời chuẩn xác, không được xảy ra hiện tượng "ảo tưởng dữ liệu".
+
+### 3.4 Module 4: Điều phối & Tương tác (Operations & Chat)
+* **FR-08 (UC17 - UC20):** Khi cán bộ bấm nút "Yêu cầu bổ sung thông tin", hệ thống phải tự động kích hoạt luồng chat trực tuyến Realtime (`UCChat`) chạy bằng công nghệ WebSockets kết nối cán bộ với người dân.
+* **FR-09 (UC31 - Dashboard):** Trang quản trị của Admin phải hiển thị biểu đồ phân tích (biểu đồ cột, biểu đồ tròn) cập nhật tự động số lượng sự cố theo thời gian thực phân bổ theo quận/huyện tại Đà Nẵng.
+
+---
+
+## 4. NON-FUNCTIONAL REQUIREMENTS (YÊU CẦU PHI CHỨC NĂNG)
+
+### 4.1 UI-UX & Tính tiếp cận (Accessibility)
+* **NFR-01:** Thanh điều hướng (Header) của người dùng bắt buộc phải chứa nút **[A+] / [A-]** để phóng to/thu nhỏ cỡ chữ toàn màn hình cho người lớn tuổi.
+* **NFR-02:** Các nút tương tác lớn trên màn hình người dân (Gửi phản ánh, Quay video, Micro nói) phải có diện tích chạm tối thiểu `48px x 48px`.
+
+### 4.2 Hiệu năng hệ thống (Performance)
+* **NFR-03:** Thời gian tải lên và xử lý phân mảnh (Chunking) các file video hiện trường dung lượng dưới 50MB không được quá 5 giây trên băng thông mạng 4G tiêu chuẩn.
+* **NFR-04:** Độ trễ truyền tải tin nhắn trong luồng chat realtime (`UCChat`) và thông báo đẩy (`UC12`) phải được khống chế dưới **200ms**.
+
+### 4.3 An toàn & Bảo mật (Security)
+* **NFR-05:** Mật khẩu của toàn bộ người dùng trong cơ sở dữ liệu MySQL bắt buộc phải được mã hóa một chiều bằng thuật toán `BCryptPasswordEncoder` của Spring Security.
+* **NFR-06:** Toàn bộ đường truyền dữ liệu nhạy cảm (SĐT, Email, Tọa độ GPS) giữa client và server phải được bảo mật bằng giao thức mã hóa HTTPS (SSL/TLS).
+
+---
+
+## 5. SYSTEM ARCHITECTURE (KIẾN TRÚC CÔNG NGHỆ)
+
+* **Công nghệ Frontend:** ReactJS phối hợp công cụ TailwindCSS để dựng giao diện.
+* **Công nghệ Backend:** Java Spring Boot xây dựng theo mô hình kiến trúc chuẩn MVC (Controller - Service - Repository).
+* **Cơ sở dữ liệu:** Hệ quản trị cơ sở dữ liệu quan hệ MySQL.
+* **Vận hành đóng gói:** Đóng gói độc lập toàn bộ các dịch vụ bằng thành phần **Docker Container** (sử dụng tệp cấu hình `docker-compose.yml`).
+
+## 6. ERD (Database Diagram)
+* **Các bảng chính:
+
+-profiles (người dùng/công chức)
+-feedbacks (phản ánh của dân)
+-feedback_media / video_footages (hình ảnh, video bằng chứng)
+-feedback_assignments, feedback_processing_logs, feedback_evaluations (quy trình xử lý)
+-violation_records (biên bản vi phạm)
+-notifications (thông báo)
+-categories (loại phản ánh)
+-admin_boundaries (ranh giới hành chính)
+-regional_warnings, kpi_reports (cảnh báo/ báo cáo KPI)
+-campaigns, knowledge_base, chatbot_sessions, chatbot_messages (AI/chat/chiến dịch)
+
+
+* **Mối quan hệ quan trọng:
+
+-feedbacks liên kết đến người dân (citizen_id), quận/phường (ward_id), và loại phản ánh (category_id).
+-feedback_media và video_footages liên kết với feedback_id.
+-feedback_assignments, feedback_processing_logs, feedback_evaluations, -violation_records đều liên quan tới feedback_id và đôi khi tới police_id/staff_id.
+-profiles đóng vai trò trung tâm cho tất cả quyền và thông tin người dùng.
+admin_boundaries kết nối với regional_warnings và kpi_reports.
+
+## 7. Use Case Diagram
+* **Actor:
+-Citizen
+-Super Admin
+-Commune People’s Committee Officer (Ward Staff)
+-Police Staff
+-AI Service
+
+* **Các chức năng chính:
+
+-Citizen: đăng ký tài khoản, gửi phản ánh mới, cập nhật hồ sơ, xem lịch sử, nhận thông báo, đánh giá xử lý.
+
+-Ward Staff / Police Staff: nhận phản ánh, yêu cầu bổ sung thông tin, chuyển hồ sơ, xử lý hiện trường, ghi nhận báo cáo, trả kết quả.
+
+-Super Admin: quản lý tài khoản, quản lý ranh giới hành chính, giám sát KPI, duyệt/chặn, tạo chiến dịch, báo cáo tổng hợp.
+
+-AI Service: phân loại phản ánh tự động, kiểm tra trùng lặp, xử lý ảnh chứng cứ, trả lời chatbot, truy vấn knowledge base.
+
+## 8. UI Giao diện Hệ thống (Người dùng)
+
+Dưới đây là giao diện thực tế của hệ thống "Thành Phố Kết Nối" được phát triển với tính tiếp cận cao (Accessibility - NFR-01/02) và giao diện trực quan sinh động:
+
+### 8.1 Trang chủ hệ thống & Thanh điều hướng thông minh
+* Banner quảng bá chính quyền điện tử Đà Nẵng.
+* Tích hợp thanh tăng/giảm kích thước chữ **`[A-]`** và **`[A+]`** trên tiêu đề (Header) hỗ trợ người lớn tuổi dễ dàng theo dõi và tương tác.
+
+![Trang chủ hệ thống - Thành Phố Kết Nối](./images/citizen_home.png)
+
+---
+
+### 8.2 Giao diện Thống kê KPI & Danh sách Phản ánh gần đây
+* Biểu đồ KPI thống kê số lượng phản ánh (Tổng số phản ánh, Đã xử lý, Đang chờ duyệt, Thời gian trung bình).
+* Bộ lọc phản ánh theo danh mục (Môi trường, Giao thông, Hạ tầng).
+* Bản đồ trực quan hiển thị vị trí của từng phản ánh hiện trường realtime.
+
+![Giao diện danh sách phản ánh & Thống kê KPI](./images/citizen_feedbacks.png)

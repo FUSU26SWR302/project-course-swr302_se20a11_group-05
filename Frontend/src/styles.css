@@ -1,0 +1,408 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  /* Civic palette */
+  --color-gov-blue: var(--gov-blue);
+  --color-gov-blue-deep: var(--gov-blue-deep);
+  --color-gov-gold: var(--gov-gold);
+  --color-gov-bg: var(--gov-bg);
+  --color-status-success: var(--status-success);
+  --color-status-pending: var(--status-pending);
+  --color-status-danger: var(--status-danger);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+
+  --font-heading: "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Civic Trust palette */
+  --gov-blue: #00387b;
+  --gov-blue-deep: #001f46;
+  --gov-gold: #d4af37;
+  --gov-bg: #f4f7fa;
+  --status-success: #1b5e20;
+  --status-pending: #e65100;
+  --status-danger: #b00020;
+  --ink: #0f172a;
+  --ink-soft: #475569;
+
+  --background: oklch(0.985 0.005 240);
+  --foreground: oklch(0.18 0.04 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 260);
+  --primary: oklch(0.32 0.13 256);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.01 250);
+  --secondary-foreground: oklch(0.18 0.04 260);
+  --muted: oklch(0.96 0.01 250);
+  --muted-foreground: oklch(0.5 0.03 256);
+  --accent: oklch(0.82 0.13 90);
+  --accent-foreground: oklch(0.18 0.04 260);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.92 0.01 250);
+  --input: oklch(0.92 0.01 250);
+  --ring: oklch(0.32 0.13 256);
+
+  /* Chart palette */
+  --chart-1: #00387b;
+  --chart-2: #d4af37;
+  --chart-3: #1b5e20;
+  --chart-4: #e65100;
+  --chart-5: #b00020;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    /* font-scale set by FontScaleProvider; default 1 */
+    font-size: calc(16px * var(--font-scale, 1));
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-gov-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    color: var(--color-gov-blue);
+    letter-spacing: -0.01em;
+  }
+
+  /* Accessible focus ring */
+  :focus-visible {
+    outline: 3px solid var(--color-gov-gold);
+    outline-offset: 2px;
+    transition: outline-offset 100ms ease;
+  }
+
+  /* All buttons at least 48px tall via utility, but anchor min target */
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Selection style */
+  ::selection {
+    background: var(--gov-gold);
+    color: var(--gov-blue-deep);
+  }
+
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .text-gov-blue {
+    color: var(--color-gov-blue);
+  }
+
+  .text-gov-gold {
+    color: var(--color-gov-gold);
+  }
+
+  .text-ink {
+    color: var(--color-ink);
+  }
+
+  .text-ink-soft {
+    color: var(--color-ink-soft);
+  }
+
+  .bg-gov-blue {
+    background-color: var(--color-gov-blue);
+  }
+
+  .bg-gov-blue-deep {
+    background-color: var(--color-gov-blue-deep);
+  }
+
+  .bg-gov-gold {
+    background-color: var(--color-gov-gold);
+  }
+
+  .bg-gov-bg {
+    background-color: var(--color-gov-bg);
+  }
+
+  .border-gov-blue {
+    border-color: var(--color-gov-blue);
+  }
+
+  .border-gov-gold {
+    border-color: var(--color-gov-gold);
+  }
+
+  .btn-civic {
+    @apply inline-flex items-center justify-center gap-3 font-bold rounded-lg transition-all min-h-[48px] px-6 py-3 text-base;
+  }
+
+  .btn-civic-primary {
+    background: var(--color-gov-blue);
+    color: white;
+    box-shadow: 0 8px 24px -8px rgba(0, 56, 123, 0.4);
+  }
+
+  .btn-civic-primary:hover {
+    background: var(--color-gov-blue-deep);
+    transform: translateY(-1px);
+  }
+
+  .btn-civic-primary:active {
+    transform: scale(0.97);
+  }
+
+  .btn-civic-ghost {
+    background: white;
+    color: var(--color-gov-blue);
+    border: 2px solid var(--color-gov-blue);
+  }
+
+  .btn-civic-ghost:hover {
+    background: var(--color-gov-blue);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .btn-civic-ghost:active {
+    transform: scale(0.97);
+  }
+
+  .card-civic {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-sm transition-all duration-200;
+  }
+
+  .card-civic-hover {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  /* Fade-in animation */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out both;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out both;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out both;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out both;
+  }
+
+  /* Stagger animation helpers */
+  .stagger-1 {
+    animation-delay: 0ms;
+  }
+
+  .stagger-2 {
+    animation-delay: 80ms;
+  }
+
+  .stagger-3 {
+    animation-delay: 160ms;
+  }
+
+  .stagger-4 {
+    animation-delay: 240ms;
+  }
+
+  @keyframes civic-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 0 rgba(212, 175, 55, 0.55),
+        0 12px 30px -8px rgba(0, 56, 123, 0.45);
+    }
+
+    50% {
+      box-shadow:
+        0 0 0 18px rgba(212, 175, 55, 0),
+        0 12px 30px -8px rgba(0, 56, 123, 0.45);
+    }
+  }
+
+  .animate-civic-pulse {
+    animation: civic-pulse 2.6s ease-in-out infinite;
+  }
+
+  /* Hero slideshow progress bar */
+  @keyframes slideProgress {
+    from {
+      transform: scaleX(0);
+    }
+
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* Login page — star/particle animation for hero panel */
+  .login-star {
+    position: absolute;
+    border-radius: 9999px;
+    background-color: #fff;
+    opacity: 0;
+    animation: starFloat linear infinite both;
+  }
+
+  @keyframes starFloat {
+    0% {
+      opacity: 0;
+      transform: translateY(0) scale(1);
+    }
+
+    15% {
+      opacity: 0.7;
+    }
+
+    80% {
+      opacity: 0.3;
+    }
+
+    100% {
+      opacity: 0;
+      transform: translateY(-80px) scale(0.5);
+    }
+  }
+
+  .dragon-pet {
+    transition: transform 0.3s;
+    user-select: none;
+  }
+
+  .dragon-pet.idle {
+    animation: dragon-float 3s ease-in-out infinite;
+  }
+
+  .dragon-pet.typing {
+    animation: dragon-bounce 0.5s ease-in-out infinite;
+  }
+
+  .dragon-pet.speaking {
+    animation: dragon-speak 0.2s ease-in-out infinite;
+  }
+
+  @keyframes dragon-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes dragon-bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-5px) scale(1.1); }
+  }
+
+  @keyframes dragon-speak {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.05) rotate(-5deg); }
+    75% { transform: scale(1.05) rotate(5deg); }
+  }
+}
